@@ -15,7 +15,7 @@ import { EmptyState } from '@/components/ui/EmptyState';
 import { Skeleton } from '@/components/ui/Skeleton';
 import { useToast } from '@/components/ui/Toast';
 import { useTransactionsByRange, useUpsertTransaction, useDeleteTransaction } from '@/hooks/useQueries';
-import { formatCurrency, formatDate, startOfMonth, toISO, cn } from '@/lib/utils';
+import { formatCurrency, formatDate, startOfMonth, endOfDay, toISO, cn } from '@/lib/utils';
 import type { Transaction } from '@/types';
 
 const CATEGORIES = ['Serviços', 'Vendas', 'Aluguel', 'Energia', 'Água', 'Internet', 'Fornecedores', 'Marketing', 'Comissões', 'Salários', 'Impostos', 'Outros'];
@@ -25,7 +25,7 @@ const empty = { type: 'revenue' as Transaction['type'], category: 'Serviços', d
 export function Financeiro() {
   const now = new Date();
   const start = toISO(startOfMonth(now));
-  const end = toISO(now);
+  const end = toISO(endOfDay(now));
   const { data: transactions = [], isLoading } = useTransactionsByRange(start, end);
   const upsert = useUpsertTransaction();
   const del = useDeleteTransaction();

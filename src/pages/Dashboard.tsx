@@ -40,6 +40,7 @@ export function Dashboard() {
   const { profile } = useAuth();
   const { data, isLoading } = useDashboard();
   const firstName = profile?.full_name?.split(' ')[0] ?? 'Admin';
+  const canSeeFinance = profile?.role === 'owner' || profile?.role === 'manager';
 
   if (isLoading || !data) {
     return (
@@ -66,22 +67,26 @@ export function Dashboard() {
 
       {/* KPIs */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        <StatCard
-          label="Faturamento do mês"
-          value={formatCurrency(data.monthRevenue)}
-          icon={DollarSign}
-          delta={monthDelta}
-          deltaLabel={data.lastMonthRevenue > 0 ? `vs ${formatCurrency(data.lastMonthRevenue)} mês passado` : 'primeiro mês'}
-          accent="gold"
-          delay={0}
-        />
-        <StatCard
-          label="Faturamento hoje"
-          value={formatCurrency(data.todayRevenue)}
-          icon={TrendingUp}
-          accent="success"
-          delay={0.05}
-        />
+        {canSeeFinance && (
+          <>
+            <StatCard
+              label="Faturamento do mês"
+              value={formatCurrency(data.monthRevenue)}
+              icon={DollarSign}
+              delta={monthDelta}
+              deltaLabel={data.lastMonthRevenue > 0 ? `vs ${formatCurrency(data.lastMonthRevenue)} mês passado` : 'primeiro mês'}
+              accent="gold"
+              delay={0}
+            />
+            <StatCard
+              label="Faturamento hoje"
+              value={formatCurrency(data.todayRevenue)}
+              icon={TrendingUp}
+              accent="success"
+              delay={0.05}
+            />
+          </>
+        )}
         <StatCard
           label="Agendamentos hoje"
           value={String(data.todayCount)}
@@ -100,7 +105,8 @@ export function Dashboard() {
         />
       </div>
 
-      {/* Charts row */}
+      {/* Charts row — faturamento consolidado é visão de gestão, não de operação do dia a dia */}
+      {canSeeFinance && (
       <div className="grid lg:grid-cols-3 gap-4 mt-6">
         <Card className="lg:col-span-2">
           <CardHeader>
@@ -170,6 +176,7 @@ export function Dashboard() {
           </CardContent>
         </Card>
       </div>
+      )}
 
       {/* Agenda + side panels */}
       <div className="grid lg:grid-cols-3 gap-4 mt-6">

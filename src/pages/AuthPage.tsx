@@ -1,7 +1,8 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { Scissors, Mail, Lock, User as UserIcon, ArrowRight, Sparkles } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
+import { usePublicCompanySettings } from '@/hooks/useQueries';
 import { useToast } from '@/components/ui/Toast';
 import { Button } from '@/components/ui/Button';
 import { Input, Field } from '@/components/ui/Input';
@@ -15,6 +16,13 @@ const FEATURES = [
 
 export function AuthPage() {
   const { signIn, signUp } = useAuth();
+  const { data: settings } = usePublicCompanySettings();
+  const companyName = settings?.name || 'Barba Hall';
+
+  useEffect(() => {
+    document.title = companyName;
+  }, [companyName]);
+
   const { push } = useToast();
   const [mode, setMode] = useState<'login' | 'signup'>('login');
   const [email, setEmail] = useState('');
@@ -52,11 +60,15 @@ export function AuthPage() {
         <div className="absolute -bottom-32 -left-20 h-80 w-80 rounded-full bg-gold-400/5 blur-3xl" />
         <div className="relative flex flex-col justify-between p-12 text-white w-full">
           <div className="flex items-center gap-3">
-            <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-gold-gradient text-ink-950 shadow-gold">
-              <Scissors className="h-6 w-6" />
+            <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-gold-gradient text-ink-950 shadow-gold overflow-hidden">
+              {settings?.logo_url ? (
+                <img src={settings.logo_url} alt={companyName} className="h-full w-full object-contain" />
+              ) : (
+                <Scissors className="h-6 w-6" />
+              )}
             </div>
             <div>
-              <p className="font-display text-xl font-bold tracking-tight">Barba Hall</p>
+              <p className="font-display text-xl font-bold tracking-tight">{companyName}</p>
               <p className="text-xs text-gold-300 tracking-widest uppercase">ERP Premium</p>
             </div>
           </div>
@@ -110,11 +122,15 @@ export function AuthPage() {
           className="w-full max-w-sm"
         >
           <div className="lg:hidden flex items-center gap-3 mb-8">
-            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gold-gradient text-ink-950">
-              <Scissors className="h-5 w-5" />
+            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gold-gradient text-ink-950 overflow-hidden">
+              {settings?.logo_url ? (
+                <img src={settings.logo_url} alt={companyName} className="h-full w-full object-contain" />
+              ) : (
+                <Scissors className="h-5 w-5" />
+              )}
             </div>
             <div>
-              <p className="font-display text-lg font-bold text-ink-900 dark:text-white">Barba Hall</p>
+              <p className="font-display text-lg font-bold text-ink-900 dark:text-white">{companyName}</p>
               <p className="text-[10px] text-gold-500 tracking-widest uppercase">ERP Premium</p>
             </div>
           </div>

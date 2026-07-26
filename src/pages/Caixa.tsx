@@ -11,7 +11,7 @@ import { EmptyState } from '@/components/ui/EmptyState';
 import { Skeleton } from '@/components/ui/Skeleton';
 import { useToast } from '@/components/ui/Toast';
 import { useOpenCashSession, useOpenCash, useCloseCash, useSalesByRange, useTransactionsByRange } from '@/hooks/useQueries';
-import { formatCurrency, formatDateTime, startOfDay, toISO, cn } from '@/lib/utils';
+import { formatCurrency, formatDateTime, startOfDay, endOfDay, toISO, cn } from '@/lib/utils';
 
 export function Caixa() {
   const { data: session, isLoading } = useOpenCashSession();
@@ -25,7 +25,7 @@ export function Caixa() {
   const [counted, setCounted] = useState('');
 
   const dayStart = toISO(startOfDay(new Date()));
-  const dayEnd = toISO(new Date());
+  const dayEnd = toISO(endOfDay(new Date()));
   const { data: sales = [] } = useSalesByRange(dayStart, dayEnd);
   const { data: txns = [] } = useTransactionsByRange(dayStart, dayEnd);
 

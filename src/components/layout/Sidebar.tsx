@@ -1,7 +1,10 @@
 import { NavLink, useLocation } from 'react-router-dom';
 import { motion } from 'framer-motion';
+import { useEffect } from 'react';
 import { Scissors, X, Sparkles } from 'lucide-react';
 import { NAV_ITEMS } from '@/lib/nav';
+import { useAuth } from '@/contexts/AuthContext';
+import { useCompanySettings } from '@/hooks/useQueries';
 import { cn } from '@/lib/utils';
 
 const GROUPS: Array<{ key: 'principal' | 'operacional' | 'gestao'; label: string }> = [
@@ -12,6 +15,14 @@ const GROUPS: Array<{ key: 'principal' | 'operacional' | 'gestao'; label: string
 
 export function Sidebar({ open, onClose }: { open: boolean; onClose: () => void }) {
   const location = useLocation();
+  const { profile } = useAuth();
+  const { data: settings } = useCompanySettings();
+  const visibleItems = NAV_ITEMS.filter((item) => !item.roles || (profile && item.roles.includes(profile.role)));
+  const companyName = settings?.name || 'Barba Hall';
+
+  useEffect(() => {
+    document.title = companyName;
+  }, [companyName]);
 
   return (
     <>
@@ -29,11 +40,15 @@ export function Sidebar({ open, onClose }: { open: boolean; onClose: () => void 
       >
         <div className="flex items-center justify-between gap-3 px-5 h-16 border-b border-ink-200/60 dark:border-ink-800">
           <NavLink to="/dashboard" className="flex items-center gap-2.5">
-            <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-gold-gradient text-ink-950 shadow-gold">
-              <Scissors className="h-5 w-5" />
+            <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-gold-gradient text-ink-950 shadow-gold overflow-hidden">
+              {settings?.logo_url ? (
+                <img src={settings.logo_url} alt={companyName} className="h-full w-full object-contain" />
+              ) : (
+                <Scissors className="h-5 w-5" />
+              )}
             </div>
             <div>
-              <p className="font-display text-base font-bold text-ink-900 dark:text-white leading-none">Barba Hall</p>
+              <p className="font-display text-base font-bold text-ink-900 dark:text-white leading-none truncate max-w-[140px]">{companyName}</p>
               <p className="text-[10px] text-gold-500 tracking-widest uppercase mt-0.5">ERP Premium</p>
             </div>
           </NavLink>
@@ -47,7 +62,7 @@ export function Sidebar({ open, onClose }: { open: boolean; onClose: () => void 
             <div key={group.key}>
               <p className="px-3 mb-2 text-[11px] font-semibold uppercase tracking-wider text-ink-400">{group.label}</p>
               <div className="space-y-0.5">
-                {NAV_ITEMS.filter((n) => n.group === group.key).map((item) => {
+                {visibleItems.filter((n) => n.group === group.key).map((item) => {
                   const active = location.pathname.startsWith(item.to);
                   return (
                     <NavLink

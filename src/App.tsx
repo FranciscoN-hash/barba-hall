@@ -7,7 +7,7 @@ import { ToastProvider } from '@/components/ui/Toast';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { AuthPage } from '@/pages/AuthPage';
 import { SeedingGate } from '@/components/SeedingGate';
-import { isSupabaseConfigured } from '@/lib/supabase';
+import type { UserRole } from '@/types';
 
 const Dashboard = lazy(() => import('@/pages/Dashboard').then((m) => ({ default: m.Dashboard })));
 const Agenda = lazy(() => import('@/pages/Agenda').then((m) => ({ default: m.Agenda })));
@@ -53,6 +53,17 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
   return <>{children}</>;
 }
 
+// Segunda camada de proteção além do menu lateral: se alguém sem o papel
+// certo digitar a URL direto (ex: /financeiro), é redirecionado — o item
+// nem aparece no menu, mas a rota em si também não deve abrir.
+function RoleRoute({ roles, children }: { roles: UserRole[]; children: React.ReactNode }) {
+  const { profile } = useAuth();
+  if (profile && !roles.includes(profile.role)) {
+    return <Navigate to="/dashboard" replace />;
+  }
+  return <>{children}</>;
+}
+
 function AppRoutes() {
   const { session } = useAuth();
   return (
@@ -75,10 +86,10 @@ function AppRoutes() {
         <Route path="/servicos" element={<Suspense fallback={<PageFallback />}><Servicos /></Suspense>} />
         <Route path="/produtos" element={<Suspense fallback={<PageFallback />}><Produtos /></Suspense>} />
         <Route path="/vendas" element={<Suspense fallback={<PageFallback />}><Vendas /></Suspense>} />
-        <Route path="/financeiro" element={<Suspense fallback={<PageFallback />}><Financeiro /></Suspense>} />
+        <Route path="/financeiro" element={<RoleRoute roles={['owner', 'manager']}><Suspense fallback={<PageFallback />}><Financeiro /></Suspense></RoleRoute>} />
         <Route path="/caixa" element={<Suspense fallback={<PageFallback />}><Caixa /></Suspense>} />
         <Route path="/marketing" element={<Suspense fallback={<PageFallback />}><Marketing /></Suspense>} />
-        <Route path="/relatorios" element={<Suspense fallback={<PageFallback />}><Relatorios /></Suspense>} />
+        <Route path="/relatorios" element={<RoleRoute roles={['owner', 'manager']}><Suspense fallback={<PageFallback />}><Relatorios /></Suspense></RoleRoute>} />
         <Route path="/configuracoes" element={<Suspense fallback={<PageFallback />}><Configuracoes /></Suspense>} />
       </Route>
       <Route path="*" element={<Navigate to="/dashboard" replace />} />
@@ -88,23 +99,6 @@ function AppRoutes() {
 
 export default function App() {
   const [client] = useState(() => queryClient);
-
-  if (!isSupabaseConfigured) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-ink-50 text-ink-900 dark:bg-ink-950 dark:text-ink-100 p-8">
-        <div className="max-w-xl rounded-3xl border border-ink-200/70 bg-white p-10 shadow-card dark:border-ink-700/70 dark:bg-ink-900">
-          <h1 className="text-3xl font-bold mb-4">Configuração do Supabase ausente</h1>
-          <p className="text-sm text-ink-600 dark:text-ink-300 mb-6">
-            Crie um arquivo <code className="font-mono">.env</code> na raiz do projeto com as variáveis <code className="font-mono">VITE_SUPABASE_URL</code> e <code className="font-mono">VITE_SUPABASE_ANON_KEY</code>.
-          </p>
-          <p className="text-sm text-ink-600 dark:text-ink-300">
-            Copie os valores do seu projeto Supabase para que a aplicação possa autenticar e carregar os dados corretamente.
-          </p>
-        </div>
-      </div>
-    );
-  }
-
   return (
     <QueryClientProvider client={client}>
       <ThemeProvider>

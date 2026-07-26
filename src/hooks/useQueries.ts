@@ -422,3 +422,94 @@ export function useDeleteTeamMember() {
     onSuccess: () => qc.invalidateQueries({ queryKey: ['team-members'] }),
   });
 }
+
+// ---------------- Identidade da empresa (nome + logo) ----------------
+export interface CompanySettings {
+  id: string;
+  user_id: string;
+  name: string;
+  phone: string | null;
+  email: string | null;
+  address: string | null;
+  logo_url: string | null;
+}
+
+export function useCompanySettings() {
+  return useQuery({
+    queryKey: ['company-settings'],
+    queryFn: async () => {
+      const id = await uid();
+      const { data, error } = await supabase
+        .from('company_settings')
+        .select('*')
+        .eq('user_id', id)
+        .maybeSingle();
+      if (error) throw error;
+      return data as CompanySettings | null;
+    },
+    ...stale(60000),
+  });
+}
+
+// Usado na tela de login: ainda não há usuário autenticado, então não dá
+// para resolver "de qual tenant" pegar a marca. Como cada cliente roda seu
+// próprio projeto Supabase (uma barbearia por deployment — ver nota na
+// migration 0007), só existe uma linha nessa tabela na prática.
+export function usePublicCompanySettings() {
+  return useQuery({
+    queryKey: ['company-settings-public'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('company_settings')
+        .select('name, logo_url')
+        .limit(1)
+        .maybeSingle();
+      if (error) throw error;
+      return data as Pick<CompanySettings, 'name' | 'logo_url'> | null;
+    },
+    ...stale(60000),
+  });
+}
+
+export function useUpdateCompanySettings() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (input: { name: string; phone: string; email: string; address: string }) => {
+      const id = await uid();
+      const { error } = await supabase
+        .from('company_settings')
+        .upsert({ user_id: id, ...input }, { onConflict: 'user_id' });
+      if (error) throw error;
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['company-settings'] }),
+  });
+}
+
+export function useUploadLogo() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (file: File) => {
+      const id = await uid();
+      const ext = file.name.split('.').pop() ?? 'png';
+      const path = `${id}/logo.${ext}`;
+
+      const { error: uploadErr } = await supabase.storage
+        .from('company-logos')
+        .upload(path, file, { upsert: true });
+      if (uploadErr) throw uploadErr;
+
+      const { data: pub } = supabase.storage.from('company-logos').getPublicUrl(path);
+      // cache-bust: sem isso, o navegador mostra a logo antiga em cache
+      // depois de trocar (mesmo nome de arquivo, mesma URL).
+      const logoUrl = `${pub.publicUrl}?v=${Date.now()}`;
+
+      const { error: upsertErr } = await supabase
+        .from('company_settings')
+        .upsert({ user_id: id, logo_url: logoUrl }, { onConflict: 'user_id' });
+      if (upsertErr) throw upsertErr;
+
+      return logoUrl;
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['company-settings'] }),
+  });
+}

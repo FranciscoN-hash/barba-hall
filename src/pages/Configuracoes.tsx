@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { motion } from 'framer-motion';
-import { Building2, User as UserIcon, Palette, Shield, Database, Save, Moon, Sun, Check, ScrollText } from 'lucide-react';
+import { Building2, User as UserIcon, Palette, Shield, Database, Save, Moon, Sun, Check, ScrollText, Upload } from 'lucide-react';
 import { PageHeader } from '@/components/layout/Topbar';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
@@ -13,7 +13,7 @@ import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
 import { useToast } from '@/components/ui/Toast';
 import { useTheme } from '@/contexts/ThemeContext';
 import { useAuth } from '@/contexts/AuthContext';
-import { useAuditLogs, useTeamMembers, useInviteTeamMember, useRevokeTeamMember, useDeleteTeamMember } from '@/hooks/useQueries';
+import { useAuditLogs, useTeamMembers, useInviteTeamMember, useRevokeTeamMember, useDeleteTeamMember, useCompanySettings, useUpdateCompanySettings, useUploadLogo } from '@/hooks/useQueries';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/lib/supabase';
 import { cn } from '@/lib/utils';
@@ -56,7 +56,6 @@ export function Configuracoes() {
   const { profile, signOut } = useAuth();
   const { push } = useToast();
   const qc = useQueryClient();
-  const [company, setCompany] = useState({ name: 'Barba Hall', phone: '+55 11 99999-9999', email: 'contato@barbahall.com', address: 'Rua das Palmeiras, 123 - São Paulo' });
   const [fullName, setFullName] = useState(profile?.full_name ?? '');
 
   const updateProfile = useMutation({
@@ -85,20 +84,7 @@ export function Configuracoes() {
 
         {/* Content */}
         <motion.div key={section} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}>
-          {section === 'empresa' && (
-            <Card>
-              <CardHeader><CardTitle>Dados da empresa</CardTitle><CardDescription>Informações exibidas no sistema e comprovantes.</CardDescription></CardHeader>
-              <CardContent className="space-y-4">
-                <div className="grid sm:grid-cols-2 gap-4">
-                  <Field label="Nome da barbearia"><Input value={company.name} onChange={(e) => setCompany({ ...company, name: e.target.value })} /></Field>
-                  <Field label="Telefone"><Input value={company.phone} onChange={(e) => setCompany({ ...company, phone: e.target.value })} /></Field>
-                  <Field label="E-mail"><Input value={company.email} onChange={(e) => setCompany({ ...company, email: e.target.value })} /></Field>
-                  <Field label="Endereço"><Input value={company.address} onChange={(e) => setCompany({ ...company, address: e.target.value })} /></Field>
-                </div>
-                <Button variant="gold" onClick={() => push({ tone: 'success', title: 'Dados salvos' })}><Save className="h-4 w-4" /> Salvar alterações</Button>
-              </CardContent>
-            </Card>
-          )}
+          {section === 'empresa' && <EmpresaSection />}
 
           {section === 'perfil' && (
             <Card>
@@ -172,6 +158,88 @@ export function Configuracoes() {
         </motion.div>
       </div>
     </div>
+  );
+}
+
+function EmpresaSection() {
+  const { profile } = useAuth();
+  const { data: settings, isLoading } = useCompanySettings();
+  const update = useUpdateCompanySettings();
+  const uploadLogo = useUploadLogo();
+  const { push } = useToast();
+  const canManage = profile?.role === 'owner' || profile?.role === 'manager';
+
+  const [form, setForm] = useState({ name: '', phone: '', email: '', address: '' });
+  const [initialized, setInitialized] = useState(false);
+
+  if (settings && !initialized) {
+    setForm({ name: settings.name, phone: settings.phone ?? '', email: settings.email ?? '', address: settings.address ?? '' });
+    setInitialized(true);
+  }
+
+  const handleSave = () => {
+    update.mutate(form, {
+      onSuccess: () => push({ tone: 'success', title: 'Dados salvos' }),
+      onError: (e: Error) => push({ tone: 'error', title: 'Erro ao salvar', description: e.message }),
+    });
+  };
+
+  const handleLogoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (file.size > 2 * 1024 * 1024) {
+      push({ tone: 'error', title: 'Arquivo muito grande', description: 'Envie uma imagem de até 2MB.' });
+      return;
+    }
+    uploadLogo.mutate(file, {
+      onSuccess: () => push({ tone: 'success', title: 'Logo atualizada' }),
+      onError: (err: Error) => push({ tone: 'error', title: 'Erro ao enviar logo', description: err.message }),
+    });
+  };
+
+  if (isLoading) {
+    return <Card><CardContent className="pt-6 space-y-3"><Skeleton className="h-10 w-full" /><Skeleton className="h-10 w-full" /></CardContent></Card>;
+  }
+
+  return (
+    <Card>
+      <CardHeader><CardTitle>Dados da empresa</CardTitle><CardDescription>Nome e logo aparecem na barra lateral e na tela de login — é a sua marca, não a nossa.</CardDescription></CardHeader>
+      <CardContent className="space-y-5">
+        <div className="flex items-center gap-4">
+          <div className="flex h-16 w-16 items-center justify-center rounded-2xl border border-dashed border-ink-300 dark:border-ink-700 bg-ink-50 dark:bg-ink-800 overflow-hidden">
+            {settings?.logo_url ? (
+              <img src={settings.logo_url} alt="Logo" className="h-full w-full object-contain" />
+            ) : (
+              <Building2 className="h-6 w-6 text-ink-400" />
+            )}
+          </div>
+          {canManage && (
+            <label className="cursor-pointer">
+              <span className="inline-flex items-center gap-2 rounded-lg border border-ink-200 dark:border-ink-700 px-3 py-2 text-sm font-medium text-ink-700 dark:text-ink-200 hover:bg-ink-50 dark:hover:bg-ink-800">
+                <Upload className="h-4 w-4" />
+                {uploadLogo.isPending ? 'Enviando...' : 'Trocar logo'}
+              </span>
+              <input type="file" accept="image/png,image/jpeg,image/svg+xml,image/webp" className="hidden" onChange={handleLogoChange} disabled={uploadLogo.isPending} />
+            </label>
+          )}
+        </div>
+
+        <div className="grid sm:grid-cols-2 gap-4">
+          <Field label="Nome da barbearia"><Input value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} disabled={!canManage} /></Field>
+          <Field label="Telefone"><Input value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} disabled={!canManage} /></Field>
+          <Field label="E-mail"><Input value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} disabled={!canManage} /></Field>
+          <Field label="Endereço"><Input value={form.address} onChange={(e) => setForm({ ...form, address: e.target.value })} disabled={!canManage} /></Field>
+        </div>
+
+        {canManage ? (
+          <Button variant="gold" onClick={handleSave} disabled={update.isPending}>
+            <Save className="h-4 w-4" /> Salvar alterações
+          </Button>
+        ) : (
+          <p className="text-xs text-ink-400">Somente o proprietário ou gerente pode alterar os dados da empresa.</p>
+        )}
+      </CardContent>
+    </Card>
   );
 }
 

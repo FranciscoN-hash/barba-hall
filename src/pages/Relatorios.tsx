@@ -10,7 +10,7 @@ import { Skeleton } from '@/components/ui/Skeleton';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { useToast } from '@/components/ui/Toast';
 import { useSalesByRange, useTransactionsByRange, useCustomers, useServices, useProducts, useBarbers } from '@/hooks/useQueries';
-import { formatCurrency, startOfMonth, subMonths, toISO, cn } from '@/lib/utils';
+import { formatCurrency, startOfMonth, subMonths, endOfDay, toISO, cn } from '@/lib/utils';
 
 const PIE_COLORS = ['#D4AF37', '#1C1C1C', '#525252', '#A3A3A3', '#737373'];
 
@@ -20,7 +20,7 @@ export function Relatorios() {
 
   const now = new Date();
   const start = range === 'month' ? toISO(startOfMonth(now)) : range === 'quarter' ? toISO(subMonths(startOfMonth(now), 2)) : toISO(subMonths(startOfMonth(now), 11));
-  const end = toISO(now);
+  const end = toISO(endOfDay(now));
 
   const { data: sales = [], isLoading: salesLoading } = useSalesByRange(start, end);
   const { data: txns = [], isLoading: txnLoading } = useTransactionsByRange(start, end);
