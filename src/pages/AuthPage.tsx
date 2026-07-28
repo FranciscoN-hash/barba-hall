@@ -17,7 +17,7 @@ const FEATURES = [
 export function AuthPage() {
   const { signIn, signUp } = useAuth();
   const { data: settings } = usePublicCompanySettings();
-  const companyName = settings?.name || 'Barba Hall';
+  const companyName = settings?.name || 'BarberFlow';
 
   useEffect(() => {
     document.title = companyName;
@@ -39,7 +39,7 @@ export function AuthPage() {
     } else {
       const { error } = await signUp(email, password, fullName);
       if (error) push({ tone: 'error', title: 'Erro ao cadastrar', description: error });
-      else push({ tone: 'success', title: 'Conta criada!', description: 'Bem-vindo ao Barba Hall ERP.' });
+      else push({ tone: 'success', title: 'Conta criada!', description: 'Bem-vindo ao BarberFlow ERP.' });
     }
     setLoading(false);
   };
@@ -109,7 +109,7 @@ export function AuthPage() {
             </ul>
           </div>
 
-          <p className="text-xs text-ink-400">© 2026 Barba Hall ERP. Feito no Brasil.</p>
+          <p className="text-xs text-ink-400">© 2026 BarberFlow ERP. Feito no Brasil.</p>
         </div>
       </div>
 

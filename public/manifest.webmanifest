@@ -1,6 +1,6 @@
 {
-  "name": "Barba Hall ERP",
-  "short_name": "Barba Hall",
+  "name": "BarberFlow ERP",
+  "short_name": "BarberFlow",
   "description": "Sistema de gestão premium para barbearias",
   "start_url": "/",
   "display": "standalone",

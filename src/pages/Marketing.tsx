@@ -9,7 +9,7 @@ import { Textarea, Field } from '@/components/ui/Input';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { Skeleton } from '@/components/ui/Skeleton';
 import { useToast } from '@/components/ui/Toast';
-import { useCustomers } from '@/hooks/useQueries';
+import { useCustomers, useCompanySettings } from '@/hooks/useQueries';
 import { formatDate, relativeTime, cn } from '@/lib/utils';
 
 type CampaignType = 'birthday' | 'inactive' | 'promo' | 'custom';
@@ -29,6 +29,8 @@ const CHANNELS = [
 
 export function Marketing() {
   const { data: customers = [], isLoading } = useCustomers();
+  const { data: settings } = useCompanySettings();
+  const companyName = settings?.name || 'BarberFlow';
   const { push } = useToast();
   const [selected, setSelected] = useState<CampaignType>('birthday');
   const [channel, setChannel] = useState('whatsapp');
@@ -54,9 +56,9 @@ export function Marketing() {
   };
 
   const defaultMessage = (type: CampaignType) => {
-    if (type === 'birthday') return 'Feliz aniversário! Ganhe 20% de desconto em qualquer serviço este mês. Barba Hall';
-    if (type === 'inactive') return 'Sentimos sua falta! Volte e ganhe um corte com 15% de desconto. Barba Hall';
-    if (type === 'promo') return 'Promoção especial esta semana! Corte + Barba com desconto. Agende já. Barba Hall';
+    if (type === 'birthday') return `Feliz aniversário! Ganhe 20% de desconto em qualquer serviço este mês. ${companyName}`;
+    if (type === 'inactive') return `Sentimos sua falta! Volte e ganhe um corte com 15% de desconto. ${companyName}`;
+    if (type === 'promo') return `Promoção especial esta semana! Corte + Barba com desconto. Agende já. ${companyName}`;
     return '';
   };
 

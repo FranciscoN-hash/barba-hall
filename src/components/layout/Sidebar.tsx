@@ -18,7 +18,7 @@ export function Sidebar({ open, onClose }: { open: boolean; onClose: () => void 
   const { profile } = useAuth();
   const { data: settings } = useCompanySettings();
   const visibleItems = NAV_ITEMS.filter((item) => !item.roles || (profile && item.roles.includes(profile.role)));
-  const companyName = settings?.name || 'Barba Hall';
+  const companyName = settings?.name || 'BarberFlow';
 
   useEffect(() => {
     document.title = companyName;
@@ -108,7 +108,7 @@ export function Sidebar({ open, onClose }: { open: boolean; onClose: () => void 
           <div className="rounded-xl bg-gold-sheen border border-gold-400/20 p-3">
             <div className="flex items-center gap-2 text-gold-600 dark:text-gold-400">
               <Sparkles className="h-4 w-4" />
-              <p className="text-xs font-semibold">Barba Hall Pro</p>
+              <p className="text-xs font-semibold">BarberFlow Pro</p>
             </div>
             <p className="mt-1 text-[11px] text-ink-500 dark:text-ink-400">Sistema premium para barbearias.</p>
           </div>
